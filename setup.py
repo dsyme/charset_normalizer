@@ -20,6 +20,7 @@ if USE_MYPYC and mypycify is not None:
         [
             "src/charset_normalizer/md.py",
             "src/charset_normalizer/cd.py",
+            "src/charset_normalizer/utils.py",
         ],
         debug_level="0",
         opt_level="3",
