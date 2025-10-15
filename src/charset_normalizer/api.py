@@ -41,6 +41,7 @@ def from_bytes(
     explain: bool = False,
     language_threshold: float = 0.1,
     enable_fallback: bool = True,
+    enable_language_detection: bool = True,
 ) -> CharsetMatches:
     """
     Given a raw bytes sequence, return the best possibles charset usable to render str objects.
@@ -58,6 +59,9 @@ def from_bytes(
     By default the library does not setup any handler other than the NullHandler, if you choose to set the 'explain'
     toggle to True it will alter the logger configuration to add a StreamHandler that is suitable for debugging.
     Custom logging format and handler can be set manually.
+
+    The enable_language_detection parameter allows you to skip language detection (coherence ratio calculation) when not
+    needed, which can improve performance. When disabled, detected encodings will not have language information attached.
     """
 
     if not isinstance(sequences, (bytearray, bytes)):
@@ -414,7 +418,8 @@ def from_bytes(
 
         # We shall skip the CD when its about ASCII
         # Most of the time its not relevant to run "language-detection" on it.
-        if encoding_iana != "ascii":
+        # Also skip if language detection is explicitly disabled.
+        if enable_language_detection and encoding_iana != "ascii":
             for chunk in md_chunks:
                 chunk_languages = coherence_ratio(
                     chunk,
@@ -553,6 +558,7 @@ def from_fp(
     explain: bool = False,
     language_threshold: float = 0.1,
     enable_fallback: bool = True,
+    enable_language_detection: bool = True,
 ) -> CharsetMatches:
     """
     Same thing than the function from_bytes but using a file pointer that is already ready.
@@ -569,6 +575,7 @@ def from_fp(
         explain,
         language_threshold,
         enable_fallback,
+        enable_language_detection,
     )
 
 
@@ -583,6 +590,7 @@ def from_path(
     explain: bool = False,
     language_threshold: float = 0.1,
     enable_fallback: bool = True,
+    enable_language_detection: bool = True,
 ) -> CharsetMatches:
     """
     Same thing than the function from_bytes but with one extra step. Opening and reading given file path in binary mode.
@@ -600,6 +608,7 @@ def from_path(
             explain,
             language_threshold,
             enable_fallback,
+            enable_language_detection,
         )
 
 
@@ -614,6 +623,7 @@ def is_binary(
     explain: bool = False,
     language_threshold: float = 0.1,
     enable_fallback: bool = False,
+    enable_language_detection: bool = True,
 ) -> bool:
     """
     Detect if the given input (file, bytes, or path) points to a binary file. aka. not a string.
@@ -632,6 +642,7 @@ def is_binary(
             explain=explain,
             language_threshold=language_threshold,
             enable_fallback=enable_fallback,
+            enable_language_detection=enable_language_detection,
         )
     elif isinstance(
         fp_or_path_or_payload,
@@ -651,6 +662,7 @@ def is_binary(
             explain=explain,
             language_threshold=language_threshold,
             enable_fallback=enable_fallback,
+            enable_language_detection=enable_language_detection,
         )
     else:
         guesses = from_fp(
@@ -664,6 +676,7 @@ def is_binary(
             explain=explain,
             language_threshold=language_threshold,
             enable_fallback=enable_fallback,
+            enable_language_detection=enable_language_detection,
         )
 
     return not guesses
