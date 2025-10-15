@@ -1,0 +1,68 @@
+name: Daily Perf Improver Build Steps
+description: Sets up the performance development environment for charset_normalizer
+
+runs:
+  using: composite
+  steps:
+    - name: Log build start
+      shell: bash
+      run: |
+        echo "=== Daily Perf Improver Build Steps Started ===" | tee -a build-steps.log
+        echo "Timestamp: $(date -Iseconds)" | tee -a build-steps.log
+        echo "Python version: $(python --version)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+
+    - name: Install CI requirements
+      shell: bash
+      run: |
+        echo "=== Installing CI requirements ===" | tee -a build-steps.log
+        python -m pip install --upgrade pip 2>&1 | tee -a build-steps.log
+        python -m pip install -r ci-requirements.txt --require-hashes 2>&1 | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+
+    - name: Install development requirements
+      shell: bash
+      run: |
+        echo "=== Installing development requirements ===" | tee -a build-steps.log
+        python -m pip install -r dev-requirements.txt --require-hashes 2>&1 | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+
+    - name: Clone char-dataset for benchmarking
+      shell: bash
+      run: |
+        echo "=== Cloning char-dataset for benchmarking ===" | tee -a build-steps.log
+        if [ ! -d "char-dataset" ]; then
+          git clone --depth 1 https://github.com/ousret/char-dataset 2>&1 | tee -a build-steps.log
+        else
+          echo "char-dataset already exists, skipping clone" | tee -a build-steps.log
+        fi
+        echo "" | tee -a build-steps.log
+
+    - name: Install package in editable mode
+      shell: bash
+      run: |
+        echo "=== Installing charset_normalizer in editable mode ===" | tee -a build-steps.log
+        python -m pip install -e . 2>&1 | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        echo "=== Verifying installation ===" | tee -a build-steps.log
+        echo "Python version:" | tee -a build-steps.log
+        python --version 2>&1 | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        echo "Installed packages (key dependencies):" | tee -a build-steps.log
+        python -m pip list | grep -E "(charset-normalizer|pytest|coverage|nox)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        echo "charset_normalizer CLI version:" | tee -a build-steps.log
+        normalizer --version 2>&1 | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+
+    - name: Log build completion
+      shell: bash
+      run: |
+        echo "=== Daily Perf Improver Build Steps Completed ===" | tee -a build-steps.log
+        echo "Timestamp: $(date -Iseconds)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        echo "Environment is ready for performance engineering work!" | tee -a build-steps.log
