@@ -1,0 +1,54 @@
+name: 'Daily Perf Improver - Build Steps'
+description: 'Sets up the development environment for charset_normalizer performance work'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install CI requirements
+      shell: bash
+      run: |
+        echo "==> Installing CI requirements..." | tee -a build-steps.log
+        python -m pip install -r ci-requirements.txt --require-hashes 2>&1 | tee -a build-steps.log
+        echo "CI requirements installed successfully" | tee -a build-steps.log
+
+    - name: Install development requirements
+      shell: bash
+      run: |
+        echo "==> Installing development requirements..." | tee -a build-steps.log
+        python -m pip install -r dev-requirements.txt --require-hashes 2>&1 | tee -a build-steps.log
+        echo "Development requirements installed successfully" | tee -a build-steps.log
+
+    - name: Clone char-dataset repository
+      shell: bash
+      run: |
+        echo "==> Cloning char-dataset repository..." | tee -a build-steps.log
+        if [ ! -d "char-dataset" ]; then
+          git clone --depth 1 https://github.com/ousret/char-dataset 2>&1 | tee -a build-steps.log
+          echo "char-dataset cloned successfully" | tee -a build-steps.log
+        else
+          echo "char-dataset already exists, pulling latest changes..." | tee -a build-steps.log
+          cd char-dataset
+          git reset --hard HEAD 2>&1 | tee -a ../build-steps.log
+          git pull 2>&1 | tee -a ../build-steps.log
+          cd ..
+          echo "char-dataset updated successfully" | tee -a build-steps.log
+        fi
+
+    - name: Install package in editable mode
+      shell: bash
+      run: |
+        echo "==> Installing charset_normalizer in editable mode..." | tee -a build-steps.log
+        python -m pip install -e . 2>&1 | tee -a build-steps.log
+        echo "Package installed successfully" | tee -a build-steps.log
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        echo "==> Verifying installation..." | tee -a build-steps.log
+        echo "Python version:" | tee -a build-steps.log
+        python --version 2>&1 | tee -a build-steps.log
+        echo "Pip version:" | tee -a build-steps.log
+        pip --version 2>&1 | tee -a build-steps.log
+        echo "charset_normalizer version:" | tee -a build-steps.log
+        normalizer --version 2>&1 | tee -a build-steps.log
+        echo "Installation verified successfully" | tee -a build-steps.log
