@@ -181,7 +181,35 @@ def from_bytes(
     if "utf_8" not in prioritized_encodings:
         prioritized_encodings.append("utf_8")
 
-    for encoding_iana in prioritized_encodings + IANA_SUPPORTED:
+    # Small input fast path optimization (issues #428, #509)
+    # For very small inputs (< 100 bytes) without BOM, test only common encodings
+    # to avoid the overhead of testing all IANA_SUPPORTED encodings
+    encoding_candidates = prioritized_encodings + IANA_SUPPORTED
+    if length < 100 and sig_encoding is None and not cp_isolation:
+        # Limit to most common encodings for small inputs
+        # Include Western European, Cyrillic, Japanese, Chinese, Korean, etc.
+        fast_path_extras = [
+            "latin_1", "windows_1252", "iso8859_1", "cp1252",  # Western European
+            "cp1250", "windows_1250", "iso8859_2",  # Central European
+            "cp1251", "windows_1251", "iso8859_5", "koi8_r", "koi8_u", "cp1125", "cp866",  # Cyrillic
+            "cp932", "shift_jis", "euc_jp", "iso2022_jp",  # Japanese
+            "gb2312", "gb18030", "big5", "hz",  # Chinese
+            "euc_kr", "cp949", "johab",  # Korean
+            "iso8859_7", "cp1253",  # Greek
+            "iso8859_9", "cp1254",  # Turkish
+            "iso8859_8", "cp1255",  # Hebrew
+            "iso8859_6", "cp1256",  # Arabic
+        ]
+        encoding_candidates = prioritized_encodings + [
+            enc for enc in fast_path_extras if enc not in prioritized_encodings
+        ]
+        logger.log(
+            TRACE,
+            "Small input fast path: limiting encoding candidates to %i most common encodings",
+            len(encoding_candidates),
+        )
+
+    for encoding_iana in encoding_candidates:
         if cp_isolation and encoding_iana not in cp_isolation:
             continue
 
