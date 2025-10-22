@@ -63,6 +63,7 @@ Start Guide
     user/getstarted
     user/advanced_search
     user/handling_result
+    user/performance
     user/miscellaneous
     user/cli
 
